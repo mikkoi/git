@@ -81,6 +81,34 @@
 #     case insensitively, even on systems with case sensitive file systems
 #     (e.g., completing tag name "FOO" on "git checkout f<TAB>").
 
+#   GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK
+#
+#     Name of an executable or a script which returns a commit message.
+#     Use this, for example, to always start a commit message with a predefined
+#     prefix. Example:
+#     # Extract Jira ticket number from branch name:
+#     extract_ticket () {
+#       if [[ "$(git rev-parse --symbolic-full-name HEAD)" =~ ([[:alpha:]]{3,}-[[:digit:]]{1,}) ]]
+#       then
+#         echo "\"${BASH_REMATCH[1]^^} "
+#       fi
+#     }
+#     GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK=extract_ticket
+#     # Doing commit:
+#     git commit --message=<TAB>
+#     # you would get (without the closing double quote):
+#     git commit --message="ABC-1234
+#
+# You can set the following Git configuration variables to influence the behavior of
+# the completion routines:
+#
+#   completion.commitMessageCallback
+#
+#     Name of an executable, script or shell functions which returns a commit message.
+#     See above environment variable GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK.
+#     The config variable gets overriden by the environment variable if latter is present.
+#
+
 case "$COMP_WORDBREAKS" in
 *:*) : great ;;
 *)   COMP_WORDBREAKS="$COMP_WORDBREAKS:"
@@ -1822,6 +1850,18 @@ _git_commit ()
 	--cleanup=*)
 		__gitcomp "default scissors strip verbatim whitespace
 			" "" "${cur##--cleanup=}"
+		return
+		;;
+	--message=*)
+		if test -n "${GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK-}"
+		then
+			__gitcomp_direct_append "$(${GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK})"
+		elif test -n "$(__git config completion.commitMessageCallback)"
+		then
+			__gitcomp_direct_append "$("$(__git config completion.commitMessageCallback)")"
+		else
+			__gitcomp_direct_append " "
+		fi
 		return
 		;;
 	--reuse-message=*|--reedit-message=*|\
