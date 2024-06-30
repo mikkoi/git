@@ -5,3 +5,14 @@ completion.commands::
 	can add more commands, separated by space, in this
 	variable. Prefixing the command with '-' will remove it from
 	the existing list.
+
+completion.commitMessageCallback::
+    This is only used by git-completion.bash for declaring an executable
+    or a shell function which will be used when user types
+    `git commit --message=` and then presses completion key (TAB).
+    The callback must return one string for commit message.
+    This can be used when all commit messages must have, for example,
+    same prefix, e.g. a work order number.
+    Instead of this configuration variable, environment variable
+    GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK can be used.
+    Environment variable overrides the configuration variable.
