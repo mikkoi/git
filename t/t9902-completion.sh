@@ -146,6 +146,74 @@ else
 	ROOT="$(pwd)"
 fi
 
+test_expect_success 'setup for commit message completion' "
+    commit-msg-callback-function () { echo HelloFromCallbackFunction; } &&
+    printf '#!/usr/bin/env sh\necho HelloFromCallbackExe\n' >.git/hooks/commit-callback &&
+    chmod +x .git/hooks/commit-callback
+"
+
+test_expect_success 'git commit --message= (empty)' "
+    test_completion 'git commit --message=' ' '
+"
+
+test_expect_success 'setup for commit message completion (run a shell function)' '
+    git config --local completion.commitMessageCallback commit-msg-callback-function
+'
+
+test_expect_success 'git commit --message=HelloFromCallbackFunction' '
+    test_completion "git commit --message=" "HelloFromCallbackFunction"
+'
+
+test_expect_success 'setup for commit message completion (run an executable file)' "
+    git config --local completion.commitMessageCallback \"${PWD}/.git/hooks/commit-callback\"
+"
+
+test_expect_success 'git commit --message=HelloFromCallbackExe' '
+    test_completion "git commit --message=" "HelloFromCallbackExe"
+'
+
+test_expect_success 'setup for commit message completion (do completion in a subdir)' '
+    mkdir -p commit_message_completion_subdir &&
+    cd commit_message_completion_subdir
+'
+
+test_expect_success 'git commit --message=HelloFromCallbackExe' '
+    test_completion "git commit --message=" "HelloFromCallbackExe"
+'
+
+test_expect_success 'teardown from commit message completion (do completion in a subdir)' '
+    cd .. &&
+    rm -r commit_message_completion_subdir
+'
+
+test_expect_success 'setup for commit message completion (run an executable file with ENV var set)' "
+    GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK=commit-msg-callback-function &&
+    export GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK
+"
+
+test_expect_success 'git commit --message=HelloFromCallbackFunction (ENV var overrides config)' '
+    test_completion "git commit --message=" "HelloFromCallbackFunction"
+'
+
+test_expect_success 'setup for commit message completion (completion begins with quote char)' '
+    commit-msg-callback-function-with-quote () { echo \"HelloFromCallbackFunctionWithQuote; } &&
+    GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK=commit-msg-callback-function-with-quote &&
+    export GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK
+'
+
+test_expect_success 'git commit --message=HelloFromCallbackFunction (completion begins with quote char)' '
+    test_completion "git commit --message=" "\"HelloFromCallbackFunctionWithQuote"
+'
+
+test_expect_success 'teardown after commit message completion' '
+    unset -v GIT_COMPLETION_COMMIT_MESSAGE_CALLBACK &&
+    git config --local --unset completion.commitMessageCallback &&
+    unset -f commit-msg-callback-function &&
+    unset -f commit-msg-callback-function-with-quote &&
+    rm .git/hooks/commit-callback
+
+'
+
 test_expect_success 'setup for __git_find_repo_path/__gitdir tests' '
 	mkdir -p subdir/subsubdir &&
 	mkdir -p non-repo &&
